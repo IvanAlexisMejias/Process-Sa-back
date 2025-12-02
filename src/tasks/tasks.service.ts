@@ -5,6 +5,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { ReportProblemDto } from './dto/report-problem.dto';
 import { CreateSubTaskDto } from './dto/create-subtask.dto';
+import { ResolveProblemDto } from './dto/resolve-problem.dto';
 import { Prisma, TaskPriority, TaskStatus, ProblemStatus } from '@prisma/client';
 
 @Injectable()
@@ -118,6 +119,26 @@ export class TasksService {
         reporterId,
       },
     });
+  }
+
+  async resolveProblem(problemId: string, dto: ResolveProblemDto, resolverId: string) {
+    const problem = await this.prisma.taskProblem.findUnique({ where: { id: problemId } });
+    if (!problem) throw new NotFoundException('Problema no encontrado');
+    await this.prisma.taskProblem.update({
+      where: { id: problemId },
+      data: {
+        status: ProblemStatus.RESOLVED,
+        resolvedAt: new Date(),
+      },
+    });
+    await this.prisma.taskHistory.create({
+      data: {
+        taskId: problem.taskId,
+        action: dto.resolution ? `Problema resuelto: ${dto.resolution}` : 'Problema marcado como resuelto',
+        performedById: resolverId,
+      },
+    });
+    return { resolved: true };
   }
 
   async addSubTask(taskId: string, dto: CreateSubTaskDto) {

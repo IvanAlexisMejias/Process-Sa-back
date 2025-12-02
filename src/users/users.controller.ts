@@ -81,4 +81,10 @@ export class UsersController {
   updateUnit(@Param('id') id: string, @Body() dto: UpdateUnitDto) {
     return this.usersService.updateUnit(id, dto);
   }
+
+  @Roles('ADMIN')
+  @Delete('units/:id')
+  removeUnit(@Param('id') id: string) {
+    return this.usersService.removeUnit(id);
+  }
 }

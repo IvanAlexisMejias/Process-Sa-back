@@ -75,6 +75,11 @@ export class TasksController {
     return this.tasksService.reportProblem(id, dto, user.userId);
   }
 
+  @Patch('problems/:problemId/resolve')
+  resolveProblem(@Param('problemId') problemId: string, @Body() dto: ResolveProblemDto, @CurrentUser() user: any) {
+    return this.tasksService.resolveProblem(problemId, dto, user.userId);
+  }
+
   @Post(':id/subtasks')
   addSubTask(@Param('id') id: string, @Body() dto: CreateSubTaskDto) {
     return this.tasksService.addSubTask(id, dto);

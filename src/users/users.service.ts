@@ -154,6 +154,16 @@ export class UsersService {
     });
   }
 
+  async removeUnit(id: string) {
+    const usage = await this.prisma.user.count({ where: { unitId: id } });
+    const flows = await this.prisma.flowInstance.count({ where: { ownerUnitId: id } });
+    if (usage > 0 || flows > 0) {
+      throw new NotFoundException('No se puede eliminar: unidad en uso por usuarios o flujos');
+    }
+    await this.prisma.unit.delete({ where: { id } });
+    return { deleted: true };
+  }
+
   private sanitize(user: any) {
     return {
       id: user.id,

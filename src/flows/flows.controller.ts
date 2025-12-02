@@ -3,6 +3,7 @@ import { FlowsService } from './flows.service';
 import { CreateFlowTemplateDto } from './dto/create-flow-template.dto';
 import { CreateFlowInstanceDto } from './dto/create-flow-instance.dto';
 import { UpdateStageStatusDto } from './dto/update-stage-status.dto';
+import { UpdateFlowTemplateDto } from './dto/update-flow-template.dto';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -21,6 +22,12 @@ export class FlowsController {
   @Get('templates')
   listTemplates() {
     return this.flowsService.listTemplates();
+  }
+
+  @Roles('DESIGNER', 'ADMIN')
+  @Patch('templates/:id')
+  updateTemplate(@Param('id') id: string, @Body() dto: UpdateFlowTemplateDto) {
+    return this.flowsService.updateTemplate(id, dto);
   }
 
   @Roles('DESIGNER', 'ADMIN')

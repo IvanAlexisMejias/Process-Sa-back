@@ -4,6 +4,7 @@ import { CreateFlowTemplateDto } from './dto/create-flow-template.dto';
 import { CreateFlowInstanceDto } from './dto/create-flow-instance.dto';
 import { UpdateStageStatusDto } from './dto/update-stage-status.dto';
 import { TaskPriority, TaskStatus } from '@prisma/client';
+import { UpdateFlowTemplateDto } from './dto/update-flow-template.dto';
 
 @Injectable()
 export class FlowsService {
@@ -34,6 +35,22 @@ export class FlowsService {
 
   async listTemplates() {
     return this.prisma.flowTemplate.findMany({
+      include: { stages: true, owner: { select: { id: true, fullName: true } } },
+    });
+  }
+
+  async updateTemplate(id: string, dto: UpdateFlowTemplateDto) {
+    const existing = await this.prisma.flowTemplate.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Plantilla no encontrada');
+    return this.prisma.flowTemplate.update({
+      where: { id },
+      data: {
+        name: dto.name ?? existing.name,
+        description: dto.description ?? existing.description,
+        businessObjective: dto.businessObjective ?? existing.businessObjective,
+        typicalDurationDays: dto.typicalDurationDays ?? existing.typicalDurationDays,
+        ownerId: dto.ownerId ?? existing.ownerId,
+      },
       include: { stages: true, owner: { select: { id: true, fullName: true } } },
     });
   }
