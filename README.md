@@ -31,6 +31,22 @@
 $ npm install
 ```
 
+## Seed de datos demo
+
+Para cargar los roles, unidades, usuarios y flujo de ejemplo sin borrar lo existente:
+
+1. Configura `DATABASE_URL` (y opcional `DEFAULT_USER_PASSWORD`, por defecto `Process123*`) en `.env`.
+2. Ejecuta las migraciones en la base de datos que quieres poblar:
+   ```bash
+   npx prisma migrate deploy
+   ```
+3. Corre el seed idempotente:
+   ```bash
+   npm run prisma:seed
+   ```
+
+Sugerencia Render: usa un comando de post-deploy como `npx prisma migrate deploy && npx prisma db seed` para que la instancia salga con datos.
+
 ## Compile and run the project
 
 ```bash
