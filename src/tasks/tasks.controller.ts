@@ -14,6 +14,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { ReportProblemDto } from './dto/report-problem.dto';
 import { CreateSubTaskDto } from './dto/create-subtask.dto';
+import { ResolveProblemDto } from './dto/resolve-problem.dto';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
