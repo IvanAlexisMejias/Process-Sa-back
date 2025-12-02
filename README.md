@@ -1,114 +1,117 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Process SA · Backend (NestJS + Prisma + PostgreSQL)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API que expone autenticación JWT, gestión de usuarios/unidades, tareas y flujos con etapas y tareas por etapa. Pensado para Render (deploy) y PostgreSQL gestionado.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Índice
+- [Arquitectura y stack](#arquitectura-y-stack)
+- [Variables de entorno](#variables-de-entorno)
+- [Comandos](#comandos)
+- [Endpoints principales](#endpoints-principales)
+- [Modelo de datos](#modelo-de-datos)
+- [Seed y datos demo](#seed-y-datos-demo)
+- [Notas de seguridad](#notas-de-seguridad)
+- [Despliegue en Render](#despliegue-en-render)
 
-## Description
+## Arquitectura y stack
+- **Runtime:** NestJS 11 (REST), Prisma ORM, PostgreSQL.
+- **Auth:** JWT (Bearer), bcrypt para hash de contraseñas, guards por rol (`JwtAuthGuard`, `RolesGuard`).
+- **Módulos:** `auth`, `users`, `tasks`, `flows`, `prisma`.
+- **DTO/Validación:** `class-validator` + `class-transformer`.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Variables de entorno
 
-## Project setup
+| Clave          | Descripción                        | Ejemplo                                                               |
+| -------------- | ---------------------------------- | --------------------------------------------------------------------- |
+| `DATABASE_URL` | Cadena PostgreSQL completa         | `postgresql://user:pass@host:5432/db?sslmode=require`                 |
+| `PORT`         | Puerto de escucha                  | `4000`                                                                |
+| `JWT_SECRET`   | Clave de firmado de JWT            | `super-secret-key`                                                    |
+| `DEFAULT_USER_PASSWORD` | Password default para seeds/creación sin password | `Process123*`                                                |
 
-```bash
-$ npm install
-```
-
-## Seed de datos demo
-
-Para cargar los roles, unidades, usuarios y flujo de ejemplo sin borrar lo existente:
-
-1. Configura `DATABASE_URL` (y opcional `DEFAULT_USER_PASSWORD`, por defecto `Process123*`) en `.env`.
-2. Ejecuta las migraciones en la base de datos que quieres poblar:
-   ```bash
-   npx prisma migrate deploy
-   ```
-3. Corre el seed idempotente:
-   ```bash
-   npm run prisma:seed
-   ```
-
-Sugerencia Render: usa un comando de post-deploy como `npx prisma migrate deploy && npx prisma db seed` para que la instancia salga con datos.
-
-## Compile and run the project
+## Comandos
 
 ```bash
-# development
-$ npm run start
+# instalar
+npm install
 
-# watch mode
-$ npm run start:dev
+# generar cliente Prisma
+npx prisma generate
 
-# production mode
-$ npm run start:prod
+# aplicar migraciones
+npx prisma migrate deploy   # producción
+npx prisma migrate dev      # desarrollo
+
+# seed idempotente
+npx prisma db seed
+
+# levantar API
+npm run start:dev           # watch
+npm run start:prod          # requiere build
 ```
 
-## Run tests
+## Endpoints principales (prefijo `/api`)
 
-```bash
-# unit tests
-$ npm run test
+Auth  
+- `POST /auth/login` → `{ accessToken, user }`  
+- `POST /auth/register`
 
-# e2e tests
-$ npm run test:e2e
+Público  
+- `GET /public/options` → roles + unidades para el formulario de registro.
 
-# test coverage
-$ npm run test:cov
-```
+Usuarios/Unidades (requiere JWT)  
+- `GET /users`, `GET /users/:id`, `POST /users` (ADMIN), `PATCH /users/:id` (ADMIN), `DELETE /users/:id` (ADMIN)  
+- `PATCH /profile` (usuario autenticado)  
+- `GET /roles`, `GET /units`, `POST /units` (ADMIN), `PATCH /units/:id` (ADMIN para actualizar líder/parent)
 
-## Deployment
+Tareas (JWT + guardia de rol)  
+- `POST /tasks`, `GET /tasks`, `GET /tasks/:id`  
+- `PATCH /tasks/:id`, `PATCH /tasks/:id/status`  
+- `POST /tasks/:id/problems`, `POST /tasks/:id/subtasks`  
+- `GET /tasks/alerts`, `GET /tasks/workload/summary`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Flujos (JWT; roles ADMIN/DESIGNER)  
+- `POST /flows/templates`, `GET /flows/templates`, `DELETE /flows/templates/:id`  
+- `POST /flows/instances` (acepta `stageTasks` por etapa), `GET /flows/instances`, `DELETE /flows/instances/:id`  
+- `PATCH /flows/instances/:instanceId/stages/:stageId` (estado/progreso)
+- `GET /flows/dashboard`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Modelo de datos (resumen)
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+Roles y permisos  
+- Enums `RoleKey { ADMIN, DESIGNER, FUNCTIONARY }`; tablas `Role`, `RolePermission`.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Organización  
+- `Unit` (jerarquía `parentId`, `leadId`), `User` (relación `roleId`, `unitId`).
 
-## Resources
+Tareas  
+- `Task` con `TaskStatus`, `TaskPriority`, dependencias (`TaskDependency`), subtareas (`SubTask`), problemas (`TaskProblem`), historial (`TaskHistory`), tags (`TaskTag`).
 
-Check out a few resources that may come in handy when working with NestJS:
+Flujos  
+- `FlowTemplate`, `FlowStage`, `FlowInstance`, `FlowStageStatus`; enum `FlowHealth`.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Notificaciones  
+- `Notification` asociable a usuario/tarea/flujo.
 
-## Support
+Esquema completo: `prisma/schema.prisma`.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Seed y datos demo
 
-## Stay in touch
+Archivo: `prisma/seed.ts` (idempotente; no borra si ya existe). Carga:
+- Roles y permisos base.
+- Unidades: Operaciones, Finanzas, Tecnología, Calidad (sin líder asignado).
+- Usuarios: Gabriela (ADMIN), Joaquín (DESIGNER), María (FUNCTIONARY) con `Process123*`.
+- Plantilla “Onboarding Cliente” con etapas y tareas por etapa.
+- Instancia “Onboarding Cliente Kora” con estados de etapa y tareas ligadas.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Ejecutar: `npx prisma db seed`.
 
-## License
+## Notas de seguridad
+- JWT en header `Authorization: Bearer <token>`.
+- Passwords con bcrypt. No usar `JWT_SECRET` por defecto en prod.
+- CORS habilitado; restringir orígenes en despliegue.
+- Guards por rol en controllers sensibles (ADMIN/DESIGNER).
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Despliegue en Render
+- Variables: `DATABASE_URL`, `JWT_SECRET`, `PORT`.
+- Comando de deploy sugerido:  
+  `npx prisma migrate deploy && npx prisma db seed && npm run start:prod`
+- URL de servicio: `https://<tu-back>.onrender.com/api` (usa `sslmode=require` en Render PG).
