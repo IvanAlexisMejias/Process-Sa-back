@@ -16,6 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUnitDto } from './dto/update-unit.dto';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
@@ -73,5 +74,11 @@ export class UsersController {
   @Post('units')
   createUnit(@Body() dto: CreateUnitDto) {
     return this.usersService.createUnit(dto);
+  }
+
+  @Roles('ADMIN')
+  @Patch('units/:id')
+  updateUnit(@Param('id') id: string, @Body() dto: UpdateUnitDto) {
+    return this.usersService.updateUnit(id, dto);
   }
 }

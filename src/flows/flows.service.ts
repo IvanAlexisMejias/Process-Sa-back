@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateFlowTemplateDto } from './dto/create-flow-template.dto';
 import { CreateFlowInstanceDto } from './dto/create-flow-instance.dto';
 import { UpdateStageStatusDto } from './dto/update-stage-status.dto';
-import { TaskStatus } from '@prisma/client';
+import { TaskPriority, TaskStatus } from '@prisma/client';
 
 @Injectable()
 export class FlowsService {
@@ -79,6 +79,35 @@ export class FlowsService {
       },
       include: this.instanceInclude(),
     });
+    const stageOwnerByStageId = instance.stageStatuses.reduce<Record<string, string | undefined>>(
+      (acc, stageStatus) => ({ ...acc, [stageStatus.stageId]: stageStatus.ownerId }),
+      {},
+    );
+
+    if (dto.stageTasks?.length) {
+      for (const stageTaskGroup of dto.stageTasks) {
+        const stage = template.stages.find((item) => item.id === stageTaskGroup.stageId);
+        if (!stage) continue;
+        for (const task of stageTaskGroup.tasks) {
+          await this.prisma.task.create({
+            data: {
+              title: task.title,
+              description: task.description ?? '',
+              priority: task.priority ?? TaskPriority.MEDIUM,
+              ownerId: task.ownerId ?? stageOwnerByStageId[stage.id] ?? template.ownerId,
+              assignerId: template.ownerId,
+              flowInstanceId: instance.id,
+              deadline: new Date(
+                new Date(dto.kickoffDate).getTime() +
+                  24 * 60 * 60 * 1000 * (task.dueInDays ?? stage.expectedDurationDays ?? 1),
+              ),
+              allowRejection: true,
+            },
+          });
+        }
+      }
+    }
+
     return this.mapInstance(instance);
   }
 
@@ -106,6 +135,28 @@ export class FlowsService {
 
     const recalculated = await this.recalculateInstanceProgress(instanceId);
     return recalculated;
+  }
+
+  async deleteTemplate(id: string) {
+    const instanceCount = await this.prisma.flowInstance.count({ where: { templateId: id } });
+    if (instanceCount > 0) {
+      throw new BadRequestException('No se puede eliminar una plantilla con instancias activas.');
+    }
+    await this.prisma.$transaction([
+      this.prisma.flowStage.deleteMany({ where: { templateId: id } }),
+      this.prisma.flowTemplate.delete({ where: { id } }),
+    ]);
+    return { deleted: true };
+  }
+
+  async deleteInstance(id: string) {
+    await this.prisma.$transaction([
+      this.prisma.notification.deleteMany({ where: { flowInstanceId: id } }),
+      this.prisma.task.deleteMany({ where: { flowInstanceId: id } }),
+      this.prisma.flowStageStatus.deleteMany({ where: { instanceId: id } }),
+      this.prisma.flowInstance.delete({ where: { id } }),
+    ]);
+    return { deleted: true };
   }
 
   async dashboard() {

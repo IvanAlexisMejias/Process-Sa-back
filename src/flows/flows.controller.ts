@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { FlowsService } from './flows.service';
 import { CreateFlowTemplateDto } from './dto/create-flow-template.dto';
 import { CreateFlowInstanceDto } from './dto/create-flow-instance.dto';
@@ -24,6 +24,12 @@ export class FlowsController {
   }
 
   @Roles('DESIGNER', 'ADMIN')
+  @Delete('templates/:id')
+  deleteTemplate(@Param('id') id: string) {
+    return this.flowsService.deleteTemplate(id);
+  }
+
+  @Roles('DESIGNER', 'ADMIN')
   @Post('instances')
   createInstance(@Body() dto: CreateFlowInstanceDto) {
     return this.flowsService.createInstance(dto);
@@ -32,6 +38,12 @@ export class FlowsController {
   @Get('instances')
   listInstances() {
     return this.flowsService.listInstances();
+  }
+
+  @Roles('DESIGNER', 'ADMIN')
+  @Delete('instances/:id')
+  deleteInstance(@Param('id') id: string) {
+    return this.flowsService.deleteInstance(id);
   }
 
   @Roles('DESIGNER', 'ADMIN')

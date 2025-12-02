@@ -221,7 +221,7 @@ async function seedInstance(
   });
 }
 
-async function seedTask(instance: FlowInstance, users: SeedUser[]) {
+async function seedTask(instance: FlowInstance, template: TemplateWithStages, users: SeedUser[]) {
   const existing = await prisma.task.findFirst({
     where: { title: 'Configurar tablero global de indicadores' },
   });
@@ -230,36 +230,56 @@ async function seedTask(instance: FlowInstance, users: SeedUser[]) {
   const ownerId = users.find((user) => user.email === 'joaquin@processsa.com')?.id ?? users[0]?.id;
   const assignerId = users.find((user) => user.email === 'gabriela@processsa.com')?.id ?? users[0]?.id;
 
-  return prisma.task.create({
-    data: {
-      title: 'Configurar tablero global de indicadores',
-      description: 'Incluir semáforo y alertas automáticas.',
-      priority: TaskPriority.HIGH,
+  const mainTask = {
+    title: 'Configurar tablero global de indicadores',
+    description: 'Incluir semáforo y alertas automáticas.',
+    priority: TaskPriority.HIGH,
+    ownerId,
+    assignerId,
+    flowInstanceId: instance.id,
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+    tags: {
+      create: [{ value: 'tablero' }, { value: 'indicadores' }],
+    },
+    subTasks: {
+      create: [
+        {
+          title: 'Entrevistar a legal',
+          assigneeId: ownerId,
+          deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+          status: TaskStatus.COMPLETED,
+        },
+        {
+          title: 'Diseñar esquema RACI',
+          assigneeId: ownerId,
+          deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+          status: TaskStatus.IN_PROGRESS,
+        },
+      ],
+    },
+  };
+
+  // Añadir una tarea por etapa para mostrar el enlazado por rol
+  const stageTasks = template.stages.map((stage, index) => ({
+      title: `Tarea clave - ${stage.name}`,
+      description: `Actividad crítica para la etapa ${stage.name}`,
+      priority: index === 0 ? TaskPriority.MEDIUM : TaskPriority.HIGH,
       ownerId,
       assignerId,
       flowInstanceId: instance.id,
-      deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      tags: {
-        create: [{ value: 'tablero' }, { value: 'indicadores' }],
-      },
-      subTasks: {
-        create: [
-          {
-            title: 'Entrevistar a legal',
-            assigneeId: ownerId,
-            deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-            status: TaskStatus.COMPLETED,
-          },
-          {
-            title: 'Diseñar esquema RACI',
-            assigneeId: ownerId,
-            deadline: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
-            status: TaskStatus.IN_PROGRESS,
-          },
-        ],
-      },
-    },
+      deadline: new Date(Date.now() + (stage.expectedDurationDays + index + 1) * 24 * 60 * 60 * 1000),
+      allowRejection: true,
+    }));
+
+  await prisma.task.create({
+    data: mainTask,
   });
+
+  if (stageTasks.length) {
+    await prisma.task.createMany({
+      data: stageTasks,
+    });
+  }
 }
 
 async function main() {
@@ -272,7 +292,7 @@ async function main() {
 
   const template = await seedTemplate(designer.id);
   const instance = await seedInstance(template, unitMap, users, roleMap);
-  await seedTask(instance, users);
+  await seedTask(instance, template, users);
 
   console.log('✅ Datos iniciales listos');
 }

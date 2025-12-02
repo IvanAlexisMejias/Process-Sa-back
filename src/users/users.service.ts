@@ -6,6 +6,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { RoleKey } from '@prisma/client';
+import { UpdateUnitDto } from './dto/update-unit.dto';
 
 const SALT_ROUNDS = 10;
 const DEFAULT_PASSWORD = process.env.DEFAULT_USER_PASSWORD ?? 'Process123*';
@@ -132,6 +133,23 @@ export class UsersService {
         name: dto.name,
         parentId: dto.parentId,
         leadId: dto.leadId,
+      },
+    });
+  }
+
+  async updateUnit(id: string, dto: UpdateUnitDto) {
+    const existing = await this.prisma.unit.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Unidad no encontrada');
+    if (dto.leadId) {
+      const user = await this.prisma.user.findUnique({ where: { id: dto.leadId } });
+      if (!user) throw new NotFoundException('El líder indicado no existe');
+    }
+    return this.prisma.unit.update({
+      where: { id },
+      data: {
+        name: dto.name ?? existing.name,
+        parentId: dto.parentId ?? existing.parentId,
+        leadId: dto.leadId === null ? null : dto.leadId ?? existing.leadId,
       },
     });
   }
