@@ -179,15 +179,24 @@ export class FlowsService {
     const instanceIds = instances.map((inst) => inst.id);
 
     await this.prisma.$transaction([
-      // eliminar tareas ligadas a las instancias
+      // limpiar datos dependientes de las tareas de las instancias
+      this.prisma.taskTag.deleteMany({ where: { task: { flowInstanceId: { in: instanceIds } } } }),
+      this.prisma.taskHistory.deleteMany({ where: { task: { flowInstanceId: { in: instanceIds } } } }),
+      this.prisma.taskProblem.deleteMany({ where: { task: { flowInstanceId: { in: instanceIds } } } }),
+      this.prisma.subTask.deleteMany({ where: { task: { flowInstanceId: { in: instanceIds } } } }),
+      this.prisma.taskDependency.deleteMany({
+        where: {
+          OR: [
+            { task: { flowInstanceId: { in: instanceIds } } },
+            { dependsOn: { flowInstanceId: { in: instanceIds } } },
+          ],
+        },
+      }),
+      this.prisma.notification.deleteMany({ where: { flowInstanceId: { in: instanceIds } } }),
       this.prisma.task.deleteMany({ where: { flowInstanceId: { in: instanceIds } } }),
-      // estados de etapas
       this.prisma.flowStageStatus.deleteMany({ where: { instanceId: { in: instanceIds } } }),
-      // instancias
       this.prisma.flowInstance.deleteMany({ where: { id: { in: instanceIds } } }),
-      // etapas de la plantilla
       this.prisma.flowStage.deleteMany({ where: { templateId: id } }),
-      // plantilla
       this.prisma.flowTemplate.delete({ where: { id } }),
     ]);
     return { deleted: true };
@@ -195,6 +204,18 @@ export class FlowsService {
 
   async deleteInstance(id: string) {
     await this.prisma.$transaction([
+      this.prisma.taskTag.deleteMany({ where: { task: { flowInstanceId: id } } }),
+      this.prisma.taskHistory.deleteMany({ where: { task: { flowInstanceId: id } } }),
+      this.prisma.taskProblem.deleteMany({ where: { task: { flowInstanceId: id } } }),
+      this.prisma.subTask.deleteMany({ where: { task: { flowInstanceId: id } } }),
+      this.prisma.taskDependency.deleteMany({
+        where: {
+          OR: [
+            { task: { flowInstanceId: id } },
+            { dependsOn: { flowInstanceId: id } },
+          ],
+        },
+      }),
       this.prisma.notification.deleteMany({ where: { flowInstanceId: id } }),
       this.prisma.task.deleteMany({ where: { flowInstanceId: id } }),
       this.prisma.flowStageStatus.deleteMany({ where: { instanceId: id } }),
