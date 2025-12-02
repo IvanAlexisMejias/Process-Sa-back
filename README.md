@@ -23,6 +23,46 @@ Backend REST modular con autenticación JWT, gestión de usuarios/unidades, tare
 - [Convenciones de estilo y calidad](#convenciones-de-estilo-y-calidad)
 - [FAQ corta](#faq-corta)
 - [Próximos pasos y escalabilidad](#próximos-pasos-y-escalabilidad)
+
+---
+
+## Resumen del caso "Control de Tareas" (PDF)
+
+**Contexto**: clientes de Process SA tienen problemas de orden y control de procesos; no miden rendimiento, sufren atrasos y no hay plataforma tecnológica que soporte el flujo operativo ni la coordinación entre unidades.
+
+**Problema**: sin sistema de información, no hay trazabilidad, notificaciones ni control de plazos; se pierden asignaciones y no existen indicadores globales/por unidad/tarea. Acciones correctivas llegan tarde.
+
+**Solución propuesta en el PDF**: sistema que modele organización y roles, defina flujos/tareas, permita instanciar procesos, asignar responsables y plazos, controlar cumplimiento con alertas y gráficos de avance, accesible para todos los empleados (web/escritorio/móvil).
+
+**Requerimientos funcionales (resumen)**:
+- Roles: administrador, diseñador de procesos, funcionario.
+- CRUD de usuarios, roles, unidades (jerarquía), creación de tareas con responsables, plazos, dependencias, subtareas, tareas relacionadas.
+- Flujos tipo instanciables (procesos repetitivos), aceptación/rechazo de tareas con justificación, panel personal con semáforo (verde/amarillo/rojo), cálculo de avance por tiempo y duración.
+- Reporte de problemas/bloqueos; alertas de atraso; carga de trabajo por funcionario; tablero global por unidad; ejecución de flujos.
+
+**Requerimientos no funcionales (PDF)**:
+- Capas separadas, seguridad (sesiones, enmascarado de clave), responsive; reportes PDF; notificaciones por email/móvil; uso de BD Oracle y PL/SQL (en nuestro stack usamos PostgreSQL/Prisma).
+- Manuales de usuario y mensajes de error claros.
+
+**Casos de uso (cuadro PDF)**: CU1-CU19 (crear usuarios/unidades/roles/tareas/subtareas, asignar responsable, calcular avance, devolver/reasignar/terminar tarea, alertar atraso, semáforo, reportar problema, carga de trabajo, resumen, ejecutar flujo).
+
+**Iteraciones sugeridas en el PDF**: 3 iteraciones incrementales (análisis/diseño inicial + autenticación/mantenedores; negocio y pruebas; integración, soporte y cierre).
+
+---
+
+## Cobertura del sistema vs requerimientos (alto nivel)
+
+- **Roles y jerarquía**: soportados (ADMIN/DESIGNER/FUNCTIONARY; unidades jerárquicas con líder).
+- **CRUD maestros**: usuarios, roles (via seed), unidades, plantillas de flujo, instancias de flujo, tareas, subtareas, dependencias, problemas.
+- **Flujos tipo e instancias**: implementado; plantillas con etapas, instanciación con tareas por etapa y responsables.
+- **Progreso y semáforo**: cálculo jerárquico tarea → etapa → flujo; estados y health; alertas de tareas bloqueadas/vencidas.
+- **Panel personal y carga de trabajo**: workload summary y alertas; panel de tareas en front.
+- **Reportes/indicadores**: dashboards en front (KPIs, ranking por unidad/usuario, distribución de estados).
+- **Notificaciones**: básicas internas (lista en front a partir de alerts); extensible a email/push.
+- **Rechazo/aceptación**: cambio de estado y progreso; falta módulo de justificación explícita (pendiente si se requiere exacto como PDF).
+- **Stack**: usamos NestJS + Prisma + PostgreSQL (no Oracle/PLSQL); responsive web; sin módulo escritorio nativo.
+
+---
 - [Próximos pasos y escalabilidad](#próximos-pasos-y-escalabilidad)
 
 ---
@@ -336,6 +376,8 @@ URL típica: `https://process-sa-back.onrender.com/api`
 - **AWS escalable**: contenedores en ECS/EKS o serverless (Lambda), BD en RDS, caché en ElastiCache; CI/CD con migraciones automatizadas.
 - **Observabilidad**: tracing distribuido (OpenTelemetry), métricas (Prometheus/Grafana), alertas sobre SLIs.
 - **Seguridad avanzada**: rotación de secretos (Secrets Manager), WAF, rate limiting por IP/tenant, políticas de menor privilegio.
+
+Comparativa de roadmap vs PDF: el documento pedía capas separadas, posibles módulos de escritorio/móvil, PL/SQL y reportes PDF. Nuestro camino propuesto moderniza el stack hacia hexagonal + microservicios + cloud (AWS) manteniendo principios de separación y escalabilidad, sustituyendo PL/SQL por Prisma/Node y contemplando notificaciones y observabilidad modernas.
 
 ## Próximos pasos y escalabilidad
 
