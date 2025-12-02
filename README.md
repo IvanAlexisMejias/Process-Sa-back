@@ -137,6 +137,42 @@ Enums clave:
 - `TaskPriority`: LOW | MEDIUM | HIGH | CRITICAL
 - `FlowHealth`: ON_TRACK | AT_RISK | DELAYED
 
+### Modelo relacional (vista simplificada)
+
+```mermaid
+erDiagram
+  Role ||--o{ RolePermission : has
+  Role ||--o{ User : assigns
+  User ||--o| Unit : belongs_to
+  Unit ||--|{ User : has
+  Unit ||--o{ FlowInstance : owns
+  Unit ||--o| Unit : parent
+
+  FlowTemplate ||--o{ FlowStage : includes
+  FlowTemplate ||--o{ FlowInstance : instanced_as
+  FlowStage ||--o{ FlowStageStatus : tracked_in
+  FlowInstance ||--o{ FlowStageStatus : has
+  FlowInstance ||--o{ Notification : generates
+
+  User ||--o{ FlowStageStatus : owns
+  User ||--o{ Task : assigns
+  User ||--o{ Task : owns
+
+  FlowInstance ||--o{ Task : contains
+  FlowStageStatus ||--o{ Task : groups
+  Task ||--o{ SubTask : has
+  Task ||--o{ TaskProblem : raises
+  Task ||--o{ TaskHistory : logs
+  Task ||--o{ TaskTag : tags
+  Task ||--o{ TaskDependency : links
+```
+
+Claves destacadas:
+- `User.roleId -> Role.id`, `User.unitId -> Unit.id`, `Unit.leadId -> User.id`.
+- `Task.flowInstanceId -> FlowInstance.id`, `Task.stageStatusId -> FlowStageStatus.id`.
+- `FlowStageStatus.instanceId -> FlowInstance.id`, `FlowStageStatus.stageId -> FlowStage.id`, `FlowStage.templateId -> FlowTemplate.id`.
+- `FlowInstance.ownerUnitId -> Unit.id`, `FlowTemplate.ownerId -> User.id`.
+
 ---
 
 ## Relaciones, cascadas y reglas de negocio
