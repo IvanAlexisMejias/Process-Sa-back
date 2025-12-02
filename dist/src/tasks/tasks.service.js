@@ -118,6 +118,7 @@ let TasksService = class TasksService {
                 description: dto.description,
                 reporterId,
             },
+            include: { reporter: { select: { id: true, fullName: true } } },
         });
     }
     async resolveProblem(problemId, dto, resolverId) {
@@ -129,6 +130,7 @@ let TasksService = class TasksService {
             data: {
                 status: client_1.ProblemStatus.RESOLVED,
                 resolvedAt: new Date(),
+                resolution: dto.resolution,
             },
         });
         await this.prisma.taskHistory.create({
@@ -236,7 +238,7 @@ let TasksService = class TasksService {
             flowInstance: { select: { id: true, name: true, ownerUnitId: true, ownerUnit: { select: { id: true, name: true } } } },
             dependencies: { select: { dependsOnId: true } },
             dependents: { select: { taskId: true } },
-            histories: true,
+            histories: { include: { performedBy: { select: { id: true, fullName: true } } } },
         };
     }
     mapTask(task) {
@@ -284,6 +286,7 @@ let TasksService = class TasksService {
                 notes: entry.notes,
                 timestamp: entry.timestamp,
                 performedBy: entry.performedById,
+                performedByName: entry.performedBy?.fullName,
             })) ?? [],
             dependencies: task.dependencies?.map((dep) => dep.dependsOnId) ?? [],
             relatedTaskIds: task.dependents?.map((dep) => dep.taskId) ?? [],

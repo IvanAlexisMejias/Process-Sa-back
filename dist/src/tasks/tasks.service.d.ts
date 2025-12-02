@@ -144,10 +144,16 @@ export declare class TasksService {
         relatedTaskIds: any;
     }>;
     reportProblem(id: string, dto: ReportProblemDto, reporterId: string): Promise<{
+        reporter: {
+            id: string;
+            fullName: string;
+        };
+    } & {
         id: string;
         description: string;
         status: import(".prisma/client").$Enums.ProblemStatus;
         createdAt: Date;
+        resolution: string | null;
         taskId: string;
         resolvedAt: Date | null;
         reporterId: string;
