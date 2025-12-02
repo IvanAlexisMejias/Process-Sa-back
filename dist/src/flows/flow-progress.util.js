@@ -5,14 +5,12 @@ const client_1 = require("@prisma/client");
 const ACTIVE_STATUSES = [client_1.TaskStatus.IN_PROGRESS, client_1.TaskStatus.BLOCKED, client_1.TaskStatus.RETURNED];
 const deriveFlowState = (stageSummaries, tasks) => {
     const anyActive = tasks?.some((task) => ACTIVE_STATUSES.includes(task.status)) ??
-        stageSummaries.some((stage) => ACTIVE_STATUSES.includes(stage.status));
-    const anyCompleted = tasks?.some((task) => task.status === client_1.TaskStatus.COMPLETED) ??
-        stageSummaries.some((stage) => stage.progress > 0 || stage.status === client_1.TaskStatus.COMPLETED);
-    const allCompleted = (stageSummaries.length > 0 && stageSummaries.every((stage) => stage.status === client_1.TaskStatus.COMPLETED || stage.progress === 100)) ||
-        (tasks?.length ? tasks.every((task) => task.status === client_1.TaskStatus.COMPLETED) : false);
+        stageSummaries.some((stage) => ACTIVE_STATUSES.includes(stage.status) || stage.progress > 0);
+    const anyProgress = stageSummaries.some((stage) => stage.progress > 0);
+    const allCompleted = stageSummaries.length > 0 && stageSummaries.every((stage) => stage.progress === 100);
     if (allCompleted)
         return 'terminada';
-    if (!anyActive && !anyCompleted)
+    if (!anyActive && !anyProgress)
         return 'no_iniciado';
     return 'en_progreso';
 };
@@ -45,22 +43,29 @@ const recalcAndPersistFlowProgress = async (prisma, instanceId) => {
     const stageSummaries = stageStatuses.map((stageStatus) => {
         const tasksForStage = tasks.filter((task) => task.stageStatusId === stageStatus.id);
         const total = tasksForStage.length;
-        const completed = tasksForStage.filter((task) => task.status === client_1.TaskStatus.COMPLETED).length;
+        const progressAvg = total > 0
+            ? tasksForStage.reduce((acc, t) => acc + Math.max(0, Math.min(100, t.progress ?? 0)), 0) / total
+            : 0;
+        const completed = progressAvg === 100 && total > 0;
         const blocked = tasksForStage.some((task) => task.status === client_1.TaskStatus.BLOCKED);
-        const inProgress = tasksForStage.some((task) => task.status === client_1.TaskStatus.IN_PROGRESS);
-        const progress = total ? Math.round((completed / total) * 100) : 0;
+        const inProgress = tasksForStage.some((task) => task.status === client_1.TaskStatus.IN_PROGRESS || (task.progress ?? 0) > 0);
         let status = stageStatus.status;
-        if (!total)
+        if (!total) {
             status = client_1.TaskStatus.PENDING;
-        else if (completed === total)
+        }
+        else if (completed) {
             status = client_1.TaskStatus.COMPLETED;
-        else if (blocked)
+        }
+        else if (blocked) {
             status = client_1.TaskStatus.BLOCKED;
-        else if (inProgress)
+        }
+        else if (inProgress) {
             status = client_1.TaskStatus.IN_PROGRESS;
-        else
+        }
+        else {
             status = client_1.TaskStatus.PENDING;
-        return { id: stageStatus.id, stageId: stageStatus.stageId, progress, status };
+        }
+        return { id: stageStatus.id, stageId: stageStatus.stageId, progress: Math.round(progressAvg), status };
     });
     await Promise.all(stageSummaries.map((summary) => prisma.flowStageStatus.update({
         where: { id: summary.id },
@@ -94,10 +99,10 @@ const deriveStateFromStages = (stageStatuses) => {
         return 'no_iniciado';
     const allCompleted = stageStatuses.every((stage) => stage.status === client_1.TaskStatus.COMPLETED || stage.progress === 100);
     const anyActive = stageStatuses.some((stage) => ACTIVE_STATUSES.includes(stage.status));
-    const anyCompleted = stageStatuses.some((stage) => stage.progress > 0 || stage.status === client_1.TaskStatus.COMPLETED);
+    const anyProgress = stageStatuses.some((stage) => stage.progress > 0);
     if (allCompleted)
         return 'terminada';
-    if (!anyActive && !anyCompleted)
+    if (!anyActive && !anyProgress)
         return 'no_iniciado';
     return 'en_progreso';
 };
