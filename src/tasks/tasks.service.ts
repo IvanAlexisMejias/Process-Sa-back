@@ -107,6 +107,9 @@ export class TasksService {
       },
       include: this.defaultInclude(),
     });
+    if (task.flowInstanceId) {
+      await this.syncFlowProgress(task.flowInstanceId);
+    }
     return this.mapTask(task);
   }
 
@@ -231,6 +234,38 @@ export class TasksService {
   private async ensureTask(id: string) {
     const exists = await this.prisma.task.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException('Tarea no encontrada');
+  }
+
+  private async syncFlowProgress(flowInstanceId: string) {
+    const tasks = await this.prisma.task.findMany({
+      where: { flowInstanceId },
+      select: { status: true, deadline: true },
+    });
+    if (!tasks.length) return;
+    const total = tasks.length;
+    const completed = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
+    const blocked = tasks.some((t) => t.status === TaskStatus.BLOCKED);
+    const delayed = tasks.some(
+      (t) => t.status !== TaskStatus.COMPLETED && new Date(t.deadline) < new Date(),
+    );
+    const progress = Math.round((completed / total) * 100);
+    const health = blocked ? 'AT_RISK' : delayed ? 'DELAYED' : 'ON_TRACK';
+
+    await this.prisma.flowInstance.update({
+      where: { id: flowInstanceId },
+      data: {
+        progress,
+        health,
+      },
+    });
+
+    // sincronizar estados de etapas: si todas las tareas completadas -> completar etapas
+    await this.prisma.flowStageStatus.updateMany({
+      where: { instanceId: flowInstanceId },
+      data: progress === 100
+        ? { progress: 100, status: TaskStatus.COMPLETED }
+        : { progress },
+    });
   }
 
   private defaultInclude() {
