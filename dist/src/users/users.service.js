@@ -30,6 +30,10 @@ let UsersService = class UsersService {
                 password: hash,
                 roleId: data.roleId,
                 unitId: data.unitId,
+                avatarColor: data.avatarColor,
+                title: data.title,
+                phone: data.phone,
+                about: data.about,
             },
             include: { role: { include: { permissions: true } }, unit: true },
         });
@@ -78,6 +82,9 @@ let UsersService = class UsersService {
             fullName: data.fullName,
             email: data.email,
             avatarColor: data.avatarColor,
+            title: data.title,
+            phone: data.phone,
+            about: data.about,
         };
         if (data.unitId === null) {
             updateData.unit = { disconnect: true };
@@ -132,12 +139,42 @@ let UsersService = class UsersService {
             },
         });
     }
+    async updateUnit(id, dto) {
+        const existing = await this.prisma.unit.findUnique({ where: { id } });
+        if (!existing)
+            throw new common_1.NotFoundException('Unidad no encontrada');
+        if (dto.leadId) {
+            const user = await this.prisma.user.findUnique({ where: { id: dto.leadId } });
+            if (!user)
+                throw new common_1.NotFoundException('El líder indicado no existe');
+        }
+        return this.prisma.unit.update({
+            where: { id },
+            data: {
+                name: dto.name ?? existing.name,
+                parentId: dto.parentId ?? existing.parentId,
+                leadId: dto.leadId === null ? null : dto.leadId ?? existing.leadId,
+            },
+        });
+    }
+    async removeUnit(id) {
+        const usage = await this.prisma.user.count({ where: { unitId: id } });
+        const flows = await this.prisma.flowInstance.count({ where: { ownerUnitId: id } });
+        if (usage > 0 || flows > 0) {
+            throw new common_1.NotFoundException('No se puede eliminar: unidad en uso por usuarios o flujos');
+        }
+        await this.prisma.unit.delete({ where: { id } });
+        return { deleted: true };
+    }
     sanitize(user) {
         return {
             id: user.id,
             fullName: user.fullName,
             email: user.email,
             avatarColor: user.avatarColor,
+            title: user.title,
+            phone: user.phone,
+            about: user.about,
             workload: user.workload,
             lastLogin: user.lastLogin,
             roleId: user.roleId,

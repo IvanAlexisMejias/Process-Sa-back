@@ -18,6 +18,7 @@ const flows_service_1 = require("./flows.service");
 const create_flow_template_dto_1 = require("./dto/create-flow-template.dto");
 const create_flow_instance_dto_1 = require("./dto/create-flow-instance.dto");
 const update_stage_status_dto_1 = require("./dto/update-stage-status.dto");
+const update_flow_template_dto_1 = require("./dto/update-flow-template.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../common/guards/roles.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
@@ -32,11 +33,20 @@ let FlowsController = class FlowsController {
     listTemplates() {
         return this.flowsService.listTemplates();
     }
+    updateTemplate(id, dto) {
+        return this.flowsService.updateTemplate(id, dto);
+    }
+    deleteTemplate(id) {
+        return this.flowsService.deleteTemplate(id);
+    }
     createInstance(dto) {
         return this.flowsService.createInstance(dto);
     }
     listInstances() {
         return this.flowsService.listInstances();
+    }
+    deleteInstance(id) {
+        return this.flowsService.deleteInstance(id);
     }
     updateStage(instanceId, stageId, dto) {
         return this.flowsService.updateStageStatus(instanceId, stageId, dto);
@@ -62,6 +72,23 @@ __decorate([
 ], FlowsController.prototype, "listTemplates", null);
 __decorate([
     (0, roles_decorator_1.Roles)('DESIGNER', 'ADMIN'),
+    (0, common_1.Patch)('templates/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_flow_template_dto_1.UpdateFlowTemplateDto]),
+    __metadata("design:returntype", void 0)
+], FlowsController.prototype, "updateTemplate", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('DESIGNER', 'ADMIN'),
+    (0, common_1.Delete)('templates/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FlowsController.prototype, "deleteTemplate", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('DESIGNER', 'ADMIN'),
     (0, common_1.Post)('instances'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -74,6 +101,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], FlowsController.prototype, "listInstances", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('DESIGNER', 'ADMIN'),
+    (0, common_1.Delete)('instances/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], FlowsController.prototype, "deleteInstance", null);
 __decorate([
     (0, roles_decorator_1.Roles)('DESIGNER', 'ADMIN'),
     (0, common_1.Patch)('instances/:instanceId/stages/:stageId'),

@@ -45,6 +45,38 @@ let FlowsService = class FlowsService {
             include: { stages: true, owner: { select: { id: true, fullName: true } } },
         });
     }
+    async updateTemplate(id, dto) {
+        const existing = await this.prisma.flowTemplate.findUnique({ where: { id } });
+        if (!existing)
+            throw new common_1.NotFoundException('Plantilla no encontrada');
+        await this.prisma.flowTemplate.update({
+            where: { id },
+            data: {
+                name: dto.name ?? existing.name,
+                description: dto.description ?? existing.description,
+                businessObjective: dto.businessObjective ?? existing.businessObjective,
+                typicalDurationDays: dto.typicalDurationDays ?? existing.typicalDurationDays,
+                ownerId: dto.ownerId ?? existing.ownerId,
+            },
+        });
+        if (dto.stages) {
+            await this.prisma.flowStage.deleteMany({ where: { templateId: id } });
+            await this.prisma.flowStage.createMany({
+                data: dto.stages.map((stage) => ({
+                    templateId: id,
+                    name: stage.name,
+                    description: stage.description,
+                    expectedDurationDays: stage.expectedDurationDays,
+                    exitCriteria: stage.exitCriteria,
+                    ownerRole: stage.ownerRole,
+                })),
+            });
+        }
+        return this.prisma.flowTemplate.findUnique({
+            where: { id },
+            include: { stages: true, owner: { select: { id: true, fullName: true } } },
+        });
+    }
     async createInstance(dto) {
         const template = await this.prisma.flowTemplate.findUnique({
             where: { id: dto.templateId },
@@ -82,6 +114,29 @@ let FlowsService = class FlowsService {
             },
             include: this.instanceInclude(),
         });
+        const stageOwnerByStageId = instance.stageStatuses.reduce((acc, stageStatus) => ({ ...acc, [stageStatus.stageId]: stageStatus.ownerId }), {});
+        if (dto.stageTasks?.length) {
+            for (const stageTaskGroup of dto.stageTasks) {
+                const stage = template.stages.find((item) => item.id === stageTaskGroup.stageId);
+                if (!stage)
+                    continue;
+                for (const task of stageTaskGroup.tasks) {
+                    await this.prisma.task.create({
+                        data: {
+                            title: task.title,
+                            description: task.description ?? '',
+                            priority: task.priority ?? client_1.TaskPriority.MEDIUM,
+                            ownerId: task.ownerId ?? stageOwnerByStageId[stage.id] ?? template.ownerId,
+                            assignerId: template.ownerId,
+                            flowInstanceId: instance.id,
+                            deadline: new Date(new Date(dto.kickoffDate).getTime() +
+                                24 * 60 * 60 * 1000 * (task.dueInDays ?? stage.expectedDurationDays ?? 1)),
+                            allowRejection: true,
+                        },
+                    });
+                }
+            }
+        }
         return this.mapInstance(instance);
     }
     async listInstances() {
@@ -106,6 +161,26 @@ let FlowsService = class FlowsService {
         });
         const recalculated = await this.recalculateInstanceProgress(instanceId);
         return recalculated;
+    }
+    async deleteTemplate(id) {
+        const instanceCount = await this.prisma.flowInstance.count({ where: { templateId: id } });
+        if (instanceCount > 0) {
+            throw new common_1.BadRequestException('No se puede eliminar una plantilla con instancias activas.');
+        }
+        await this.prisma.$transaction([
+            this.prisma.flowStage.deleteMany({ where: { templateId: id } }),
+            this.prisma.flowTemplate.delete({ where: { id } }),
+        ]);
+        return { deleted: true };
+    }
+    async deleteInstance(id) {
+        await this.prisma.$transaction([
+            this.prisma.notification.deleteMany({ where: { flowInstanceId: id } }),
+            this.prisma.task.deleteMany({ where: { flowInstanceId: id } }),
+            this.prisma.flowStageStatus.deleteMany({ where: { instanceId: id } }),
+            this.prisma.flowInstance.delete({ where: { id } }),
+        ]);
+        return { deleted: true };
     }
     async dashboard() {
         const [instances, tasks] = await Promise.all([

@@ -42,7 +42,7 @@ export class FlowsService {
   async updateTemplate(id: string, dto: UpdateFlowTemplateDto) {
     const existing = await this.prisma.flowTemplate.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Plantilla no encontrada');
-    return this.prisma.flowTemplate.update({
+    await this.prisma.flowTemplate.update({
       where: { id },
       data: {
         name: dto.name ?? existing.name,
@@ -51,6 +51,22 @@ export class FlowsService {
         typicalDurationDays: dto.typicalDurationDays ?? existing.typicalDurationDays,
         ownerId: dto.ownerId ?? existing.ownerId,
       },
+    });
+    if (dto.stages) {
+      await this.prisma.flowStage.deleteMany({ where: { templateId: id } });
+      await this.prisma.flowStage.createMany({
+        data: dto.stages.map((stage) => ({
+          templateId: id,
+          name: stage.name,
+          description: stage.description,
+          expectedDurationDays: stage.expectedDurationDays,
+          exitCriteria: stage.exitCriteria,
+          ownerRole: stage.ownerRole,
+        })),
+      });
+    }
+    return this.prisma.flowTemplate.findUnique({
+      where: { id },
       include: { stages: true, owner: { select: { id: true, fullName: true } } },
     });
   }

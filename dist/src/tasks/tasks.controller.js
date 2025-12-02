@@ -20,6 +20,7 @@ const update_task_dto_1 = require("./dto/update-task.dto");
 const update_task_status_dto_1 = require("./dto/update-task-status.dto");
 const report_problem_dto_1 = require("./dto/report-problem.dto");
 const create_subtask_dto_1 = require("./dto/create-subtask.dto");
+const resolve_problem_dto_1 = require("./dto/resolve-problem.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../common/guards/roles.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
@@ -55,6 +56,9 @@ let TasksController = class TasksController {
     }
     reportProblem(id, dto, user) {
         return this.tasksService.reportProblem(id, dto, user.userId);
+    }
+    resolveProblem(problemId, dto, user) {
+        return this.tasksService.resolveProblem(problemId, dto, user.userId);
     }
     addSubTask(id, dto) {
         return this.tasksService.addSubTask(id, dto);
@@ -120,6 +124,15 @@ __decorate([
     __metadata("design:paramtypes", [String, report_problem_dto_1.ReportProblemDto, Object]),
     __metadata("design:returntype", void 0)
 ], TasksController.prototype, "reportProblem", null);
+__decorate([
+    (0, common_1.Patch)('problems/:problemId/resolve'),
+    __param(0, (0, common_1.Param)('problemId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, resolve_problem_dto_1.ResolveProblemDto, Object]),
+    __metadata("design:returntype", void 0)
+], TasksController.prototype, "resolveProblem", null);
 __decorate([
     (0, common_1.Post)(':id/subtasks'),
     __param(0, (0, common_1.Param)('id')),

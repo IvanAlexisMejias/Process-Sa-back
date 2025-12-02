@@ -11,12 +11,62 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateFlowInstanceDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+const client_1 = require("@prisma/client");
+class StageTaskInput {
+    title;
+    description;
+    priority;
+    dueInDays;
+    ownerId;
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StageTaskInput.prototype, "title", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StageTaskInput.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.TaskPriority),
+    __metadata("design:type", String)
+], StageTaskInput.prototype, "priority", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], StageTaskInput.prototype, "dueInDays", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StageTaskInput.prototype, "ownerId", void 0);
+class StageTaskGroupInput {
+    stageId;
+    tasks;
+}
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], StageTaskGroupInput.prototype, "stageId", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ArrayMinSize)(1),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => StageTaskInput),
+    __metadata("design:type", Array)
+], StageTaskGroupInput.prototype, "tasks", void 0);
 class CreateFlowInstanceDto {
     templateId;
     name;
     ownerUnitId;
     kickoffDate;
     dueDate;
+    stageTasks;
 }
 exports.CreateFlowInstanceDto = CreateFlowInstanceDto;
 __decorate([
@@ -39,4 +89,11 @@ __decorate([
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", String)
 ], CreateFlowInstanceDto.prototype, "dueDate", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => StageTaskGroupInput),
+    __metadata("design:type", Array)
+], CreateFlowInstanceDto.prototype, "stageTasks", void 0);
 //# sourceMappingURL=create-flow-instance.dto.js.map

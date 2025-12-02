@@ -25,6 +25,10 @@ export class UsersService {
         password: hash,
         roleId: data.roleId,
         unitId: data.unitId,
+        avatarColor: data.avatarColor,
+        title: data.title,
+        phone: data.phone,
+        about: data.about,
       },
       include: { role: { include: { permissions: true } }, unit: true },
     });
@@ -76,6 +80,9 @@ export class UsersService {
       fullName: data.fullName,
       email: data.email,
       avatarColor: data.avatarColor,
+      title: data.title,
+      phone: data.phone,
+      about: data.about,
     };
 
     if (data.unitId === null) {
@@ -170,6 +177,9 @@ export class UsersService {
       fullName: user.fullName,
       email: user.email,
       avatarColor: user.avatarColor,
+      title: user.title,
+      phone: user.phone,
+      about: user.about,
       workload: user.workload,
       lastLogin: user.lastLogin,
       roleId: user.roleId,

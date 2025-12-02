@@ -120,6 +120,26 @@ let TasksService = class TasksService {
             },
         });
     }
+    async resolveProblem(problemId, dto, resolverId) {
+        const problem = await this.prisma.taskProblem.findUnique({ where: { id: problemId } });
+        if (!problem)
+            throw new common_1.NotFoundException('Problema no encontrado');
+        await this.prisma.taskProblem.update({
+            where: { id: problemId },
+            data: {
+                status: client_1.ProblemStatus.RESOLVED,
+                resolvedAt: new Date(),
+            },
+        });
+        await this.prisma.taskHistory.create({
+            data: {
+                taskId: problem.taskId,
+                action: dto.resolution ? `Problema resuelto: ${dto.resolution}` : 'Problema marcado como resuelto',
+                performedById: resolverId,
+            },
+        });
+        return { resolved: true };
+    }
     async addSubTask(taskId, dto) {
         await this.ensureTask(taskId);
         return this.prisma.subTask.create({

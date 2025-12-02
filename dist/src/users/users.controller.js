@@ -19,6 +19,7 @@ const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
 const create_unit_dto_1 = require("./dto/create-unit.dto");
 const update_profile_dto_1 = require("./dto/update-profile.dto");
+const update_unit_dto_1 = require("./dto/update-unit.dto");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
 const roles_guard_1 = require("../common/guards/roles.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
@@ -54,6 +55,12 @@ let UsersController = class UsersController {
     }
     createUnit(dto) {
         return this.usersService.createUnit(dto);
+    }
+    updateUnit(id, dto) {
+        return this.usersService.updateUnit(id, dto);
+    }
+    removeUnit(id) {
+        return this.usersService.removeUnit(id);
     }
 };
 exports.UsersController = UsersController;
@@ -125,6 +132,23 @@ __decorate([
     __metadata("design:paramtypes", [create_unit_dto_1.CreateUnitDto]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "createUnit", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.Patch)('units/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_unit_dto_1.UpdateUnitDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "updateUnit", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.Delete)('units/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "removeUnit", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, common_1.Controller)(),

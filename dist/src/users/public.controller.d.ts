@@ -11,17 +11,17 @@ export declare class PublicController {
             permissions: string[];
         }[];
         units: ({
-            parent: {
-                id: string;
-                name: string;
-            } | null;
             lead: {
                 id: string;
                 fullName: string;
             } | null;
+            parent: {
+                name: string;
+                id: string;
+            } | null;
         } & {
-            id: string;
             name: string;
+            id: string;
             parentId: string | null;
             leadId: string | null;
         })[];

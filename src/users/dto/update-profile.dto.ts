@@ -21,4 +21,16 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   avatarColor?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  about?: string;
 }

@@ -18,4 +18,20 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   unitId?: string;
+
+  @IsOptional()
+  @IsString()
+  avatarColor?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  about?: string;
 }

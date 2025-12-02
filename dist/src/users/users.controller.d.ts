@@ -4,6 +4,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUnitDto } from './dto/create-unit.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUnitDto } from './dto/update-unit.dto';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
@@ -12,6 +13,9 @@ export declare class UsersController {
         fullName: any;
         email: any;
         avatarColor: any;
+        title: any;
+        phone: any;
+        about: any;
         workload: any;
         lastLogin: any;
         roleId: any;
@@ -29,6 +33,9 @@ export declare class UsersController {
         fullName: any;
         email: any;
         avatarColor: any;
+        title: any;
+        phone: any;
+        about: any;
         workload: any;
         lastLogin: any;
         roleId: any;
@@ -46,6 +53,9 @@ export declare class UsersController {
         fullName: any;
         email: any;
         avatarColor: any;
+        title: any;
+        phone: any;
+        about: any;
         workload: any;
         lastLogin: any;
         roleId: any;
@@ -63,6 +73,9 @@ export declare class UsersController {
         fullName: any;
         email: any;
         avatarColor: any;
+        title: any;
+        phone: any;
+        about: any;
         workload: any;
         lastLogin: any;
         roleId: any;
@@ -80,6 +93,9 @@ export declare class UsersController {
         fullName: any;
         email: any;
         avatarColor: any;
+        title: any;
+        phone: any;
+        about: any;
         workload: any;
         lastLogin: any;
         roleId: any;
@@ -103,24 +119,33 @@ export declare class UsersController {
         permissions: string[];
     }[]>;
     listUnits(): Promise<({
-        parent: {
-            id: string;
-            name: string;
-        } | null;
         lead: {
             id: string;
             fullName: string;
         } | null;
+        parent: {
+            name: string;
+            id: string;
+        } | null;
     } & {
-        id: string;
         name: string;
+        id: string;
         parentId: string | null;
         leadId: string | null;
     })[]>;
     createUnit(dto: CreateUnitDto): Promise<{
-        id: string;
         name: string;
+        id: string;
         parentId: string | null;
         leadId: string | null;
+    }>;
+    updateUnit(id: string, dto: UpdateUnitDto): Promise<{
+        name: string;
+        id: string;
+        parentId: string | null;
+        leadId: string | null;
+    }>;
+    removeUnit(id: string): Promise<{
+        deleted: boolean;
     }>;
 }

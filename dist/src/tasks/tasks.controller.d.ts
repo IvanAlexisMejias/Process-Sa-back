@@ -4,6 +4,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import { ReportProblemDto } from './dto/report-problem.dto';
 import { CreateSubTaskDto } from './dto/create-subtask.dto';
+import { ResolveProblemDto } from './dto/resolve-problem.dto';
 export declare class TasksController {
     private readonly tasksService;
     constructor(tasksService: TasksService);
@@ -174,11 +175,14 @@ export declare class TasksController {
         resolvedAt: Date | null;
         reporterId: string;
     }>;
+    resolveProblem(problemId: string, dto: ResolveProblemDto, user: any): Promise<{
+        resolved: boolean;
+    }>;
     addSubTask(id: string, dto: CreateSubTaskDto): Promise<{
         id: string;
+        title: string;
         progress: number;
         status: import(".prisma/client").$Enums.TaskStatus;
-        title: string;
         deadline: Date;
         assigneeId: string;
         taskId: string;

@@ -17,6 +17,9 @@ class UpdateProfileDto {
     password;
     unitId;
     avatarColor;
+    title;
+    phone;
+    about;
 }
 exports.UpdateProfileDto = UpdateProfileDto;
 __decorate([
@@ -45,4 +48,19 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateProfileDto.prototype, "avatarColor", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "title", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "phone", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateProfileDto.prototype, "about", void 0);
 //# sourceMappingURL=update-profile.dto.js.map
