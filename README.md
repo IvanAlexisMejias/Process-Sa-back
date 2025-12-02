@@ -23,6 +23,7 @@ Backend REST modular con autenticación JWT, gestión de usuarios/unidades, tare
 - [Convenciones de estilo y calidad](#convenciones-de-estilo-y-calidad)
 - [FAQ corta](#faq-corta)
 - [Próximos pasos y escalabilidad](#próximos-pasos-y-escalabilidad)
+- [Próximos pasos y escalabilidad](#próximos-pasos-y-escalabilidad)
 
 ---
 
@@ -325,6 +326,16 @@ URL típica: `https://process-sa-back.onrender.com/api`
 | ¿Cómo agrego un nuevo rol?                    | Agrega `RoleKey`, seed, permisos y ajusta guards; actualiza front types.  |
 | ¿Cómo probar rápido en local?                 | `npm run start:dev` + `npx prisma migrate dev` + `npx prisma db seed`.    |
 
+
+## Próximos pasos y escalabilidad
+
+- **Arquitectura hexagonal**: separar dominio/aplicación de infraestructura (Prisma/Nest) para testing aislado y menor acoplamiento.
+- **Microservicios / BFF**: dividir en BFF para front (agregación) + servicios por dominio (users, tasks, flows). API gateway opcional.
+- **Modularización por feature**: empaquetar dominios en módulos aislables (mono-repo) con migraciones propias.
+- **Mensajería/eventos**: publicar eventos de dominio (tarea actualizada, flujo completado) en un bus (SNS/SQS, Kafka) para notificaciones/reportes desacoplados.
+- **AWS escalable**: contenedores en ECS/EKS o serverless (Lambda), BD en RDS, caché en ElastiCache; CI/CD con migraciones automatizadas.
+- **Observabilidad**: tracing distribuido (OpenTelemetry), métricas (Prometheus/Grafana), alertas sobre SLIs.
+- **Seguridad avanzada**: rotación de secretos (Secrets Manager), WAF, rate limiting por IP/tenant, políticas de menor privilegio.
 
 ## Próximos pasos y escalabilidad
 
