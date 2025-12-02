@@ -117,6 +117,7 @@ model TaskProblem {
   status      ProblemStatus @default(OPEN)
   createdAt   DateTime      @default(now())
   resolvedAt  DateTime?
+  resolution  String?
   taskId      String
   reporterId  String
   reporter    User          @relation("ProblemReporter", fields: [reporterId], references: [id])
