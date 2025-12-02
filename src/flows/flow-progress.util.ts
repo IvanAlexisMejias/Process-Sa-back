@@ -86,16 +86,15 @@ export const recalcAndPersistFlowProgress = async (prisma: PrismaService, instan
   );
 
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.status === TaskStatus.COMPLETED).length;
   const blockedTasks = tasks.some((task) => task.status === TaskStatus.BLOCKED);
   const delayedTasks = tasks.some(
     (task) => task.status !== TaskStatus.COMPLETED && task.deadline && new Date(task.deadline) < now,
   );
-
-  const flowProgress =
-    totalTasks > 0
-      ? Math.round((completedTasks / totalTasks) * 100)
-      : Math.round(stageSummaries.reduce((acc, stage) => acc + stage.progress, 0) / stageSummaries.length);
+  const stageProgressAvg =
+    stageSummaries.length > 0
+      ? stageSummaries.reduce((acc, stage) => acc + stage.progress, 0) / stageSummaries.length
+      : 0;
+  const flowProgress = Math.round(stageProgressAvg);
 
   const state = deriveFlowState(stageSummaries, tasks);
   const health: FlowHealth = blockedTasks ? FlowHealth.AT_RISK : delayedTasks ? FlowHealth.DELAYED : FlowHealth.ON_TRACK;

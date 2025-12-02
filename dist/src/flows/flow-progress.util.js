@@ -67,12 +67,12 @@ const recalcAndPersistFlowProgress = async (prisma, instanceId) => {
         data: { progress: summary.progress, status: summary.status },
     })));
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((task) => task.status === client_1.TaskStatus.COMPLETED).length;
     const blockedTasks = tasks.some((task) => task.status === client_1.TaskStatus.BLOCKED);
     const delayedTasks = tasks.some((task) => task.status !== client_1.TaskStatus.COMPLETED && task.deadline && new Date(task.deadline) < now);
-    const flowProgress = totalTasks > 0
-        ? Math.round((completedTasks / totalTasks) * 100)
-        : Math.round(stageSummaries.reduce((acc, stage) => acc + stage.progress, 0) / stageSummaries.length);
+    const stageProgressAvg = stageSummaries.length > 0
+        ? stageSummaries.reduce((acc, stage) => acc + stage.progress, 0) / stageSummaries.length
+        : 0;
+    const flowProgress = Math.round(stageProgressAvg);
     const state = deriveFlowState(stageSummaries, tasks);
     const health = blockedTasks ? client_1.FlowHealth.AT_RISK : delayedTasks ? client_1.FlowHealth.DELAYED : client_1.FlowHealth.ON_TRACK;
     const flow = await prisma.flowInstance.update({
