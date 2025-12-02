@@ -24,6 +24,7 @@ export declare class TasksController {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -50,6 +51,7 @@ export declare class TasksController {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -76,6 +78,7 @@ export declare class TasksController {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -110,6 +113,7 @@ export declare class TasksController {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -136,6 +140,7 @@ export declare class TasksController {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -162,6 +167,7 @@ export declare class TasksController {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;

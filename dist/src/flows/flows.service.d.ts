@@ -3,6 +3,7 @@ import { CreateFlowTemplateDto } from './dto/create-flow-template.dto';
 import { CreateFlowInstanceDto } from './dto/create-flow-instance.dto';
 import { UpdateStageStatusDto } from './dto/update-stage-status.dto';
 import { UpdateFlowTemplateDto } from './dto/update-flow-template.dto';
+import { FlowState } from './flow-progress.util';
 export declare class FlowsService {
     private readonly prisma;
     constructor(prisma: PrismaService);
@@ -75,6 +76,7 @@ export declare class FlowsService {
         id: any;
         name: any;
         health: any;
+        state: FlowState;
         progress: any;
         kickoffDate: any;
         dueDate: any;
@@ -88,6 +90,7 @@ export declare class FlowsService {
         id: any;
         name: any;
         health: any;
+        state: FlowState;
         progress: any;
         kickoffDate: any;
         dueDate: any;
@@ -101,6 +104,7 @@ export declare class FlowsService {
         id: any;
         name: any;
         health: any;
+        state: FlowState;
         progress: any;
         kickoffDate: any;
         dueDate: any;
@@ -121,6 +125,7 @@ export declare class FlowsService {
             id: any;
             name: any;
             health: any;
+            state: FlowState;
             progress: any;
             kickoffDate: any;
             dueDate: any;

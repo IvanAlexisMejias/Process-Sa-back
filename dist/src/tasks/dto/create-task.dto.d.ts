@@ -8,6 +8,7 @@ export declare class CreateTaskDto {
     assignerId: string;
     deadline: string;
     flowInstanceId?: string;
+    stageStatusId?: string;
     tags?: string[];
     subTasks?: CreateSubTaskDto[];
 }

@@ -78,6 +78,7 @@ export declare class FlowsController {
         id: any;
         name: any;
         health: any;
+        state: import("./flow-progress.util").FlowState;
         progress: any;
         kickoffDate: any;
         dueDate: any;
@@ -91,6 +92,7 @@ export declare class FlowsController {
         id: any;
         name: any;
         health: any;
+        state: import("./flow-progress.util").FlowState;
         progress: any;
         kickoffDate: any;
         dueDate: any;
@@ -107,6 +109,7 @@ export declare class FlowsController {
         id: any;
         name: any;
         health: any;
+        state: import("./flow-progress.util").FlowState;
         progress: any;
         kickoffDate: any;
         dueDate: any;
@@ -121,6 +124,7 @@ export declare class FlowsController {
             id: any;
             name: any;
             health: any;
+            state: import("./flow-progress.util").FlowState;
             progress: any;
             kickoffDate: any;
             dueDate: any;

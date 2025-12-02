@@ -36,6 +36,10 @@ export class CreateTaskDto {
   flowInstanceId?: string;
 
   @IsOptional()
+  @IsString()
+  stageStatusId?: string;
+
+  @IsOptional()
   @IsArray()
   tags?: string[];
 

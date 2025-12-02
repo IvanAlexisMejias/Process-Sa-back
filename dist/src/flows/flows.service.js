@@ -13,6 +13,7 @@ exports.FlowsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const flow_progress_util_1 = require("./flow-progress.util");
 let FlowsService = class FlowsService {
     prisma;
     constructor(prisma) {
@@ -115,6 +116,7 @@ let FlowsService = class FlowsService {
             include: this.instanceInclude(),
         });
         const stageOwnerByStageId = instance.stageStatuses.reduce((acc, stageStatus) => ({ ...acc, [stageStatus.stageId]: stageStatus.ownerId }), {});
+        const stageStatusByStageId = instance.stageStatuses.reduce((acc, stageStatus) => ({ ...acc, [stageStatus.stageId]: stageStatus.id }), {});
         if (dto.stageTasks?.length) {
             for (const stageTaskGroup of dto.stageTasks) {
                 const stage = template.stages.find((item) => item.id === stageTaskGroup.stageId);
@@ -129,6 +131,7 @@ let FlowsService = class FlowsService {
                             ownerId: task.ownerId ?? stageOwnerByStageId[stage.id] ?? template.ownerId,
                             assignerId: template.ownerId,
                             flowInstanceId: instance.id,
+                            stageStatusId: stageStatusByStageId[stage.id],
                             deadline: new Date(new Date(dto.kickoffDate).getTime() +
                                 24 * 60 * 60 * 1000 * (task.dueInDays ?? stage.expectedDurationDays ?? 1)),
                             allowRejection: true,
@@ -137,7 +140,8 @@ let FlowsService = class FlowsService {
                 }
             }
         }
-        return this.mapInstance(instance);
+        const recalculated = await (0, flow_progress_util_1.recalcAndPersistFlowProgress)(this.prisma, instance.id);
+        return this.mapInstance(recalculated.flow, recalculated.state);
     }
     async listInstances() {
         const instances = await this.prisma.flowInstance.findMany({
@@ -159,8 +163,8 @@ let FlowsService = class FlowsService {
                 ownerId: dto.ownerId ?? stageStatus.ownerId,
             },
         });
-        const recalculated = await this.recalculateInstanceProgress(instanceId);
-        return recalculated;
+        const recalculated = await (0, flow_progress_util_1.recalcAndPersistFlowProgress)(this.prisma, instanceId);
+        return this.mapInstance(recalculated.flow, recalculated.state);
     }
     async deleteTemplate(id) {
         const instances = await this.prisma.flowInstance.findMany({
@@ -226,28 +230,8 @@ let FlowsService = class FlowsService {
         return { instances, taskSummary };
     }
     async recalculateInstanceProgress(instanceId) {
-        const instance = await this.prisma.flowInstance.findUnique({
-            where: { id: instanceId },
-            include: { stageStatuses: true, template: { include: { stages: true } }, ownerUnit: true },
-        });
-        if (!instance)
-            throw new common_1.NotFoundException('Flujo no encontrado');
-        const totalStages = instance.stageStatuses.length || 1;
-        const progress = instance.stageStatuses.reduce((acc, curr) => acc + curr.progress, 0) / totalStages;
-        const health = instance.stageStatuses.some((stage) => stage.status === client_1.TaskStatus.BLOCKED)
-            ? 'AT_RISK'
-            : progress >= 80
-                ? 'ON_TRACK'
-                : 'AT_RISK';
-        const updated = await this.prisma.flowInstance.update({
-            where: { id: instanceId },
-            data: {
-                progress: Math.round(progress),
-                health,
-            },
-            include: this.instanceInclude(),
-        });
-        return this.mapInstance(updated);
+        const recalculated = await (0, flow_progress_util_1.recalcAndPersistFlowProgress)(this.prisma, instanceId);
+        return this.mapInstance(recalculated.flow, recalculated.state);
     }
     instanceInclude() {
         return {
@@ -261,11 +245,20 @@ let FlowsService = class FlowsService {
             },
         };
     }
-    mapInstance(instance) {
+    mapInstance(instance, stateOverride) {
+        const stageStatuses = instance.stageStatuses.map((stageStatus) => ({
+            id: stageStatus.id,
+            status: stageStatus.status,
+            progress: stageStatus.progress,
+            owner: stageStatus.owner,
+            stage: stageStatus.stage,
+        }));
+        const state = stateOverride ?? (0, flow_progress_util_1.deriveStateFromStages)(stageStatuses);
         return {
             id: instance.id,
             name: instance.name,
             health: instance.health,
+            state,
             progress: instance.progress,
             kickoffDate: instance.kickoffDate,
             dueDate: instance.dueDate,
@@ -273,13 +266,7 @@ let FlowsService = class FlowsService {
             ownerUnitId: instance.ownerUnitId,
             template: instance.template,
             ownerUnit: instance.ownerUnit,
-            stageStatuses: instance.stageStatuses.map((stageStatus) => ({
-                id: stageStatus.id,
-                status: stageStatus.status,
-                progress: stageStatus.progress,
-                owner: stageStatus.owner,
-                stage: stageStatus.stage,
-            })),
+            stageStatuses,
         };
     }
 };

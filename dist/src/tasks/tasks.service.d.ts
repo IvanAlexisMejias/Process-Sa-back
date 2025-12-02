@@ -25,6 +25,7 @@ export declare class TasksService {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -55,6 +56,7 @@ export declare class TasksService {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -81,6 +83,7 @@ export declare class TasksService {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -107,6 +110,7 @@ export declare class TasksService {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -133,6 +137,7 @@ export declare class TasksService {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -194,6 +199,7 @@ export declare class TasksService {
         durationDays: any;
         allowRejection: any;
         owner: any;
+        stageStatusId: any;
         ownerUnitId: any;
         assigner: any;
         flowInstance: any;
@@ -205,6 +211,7 @@ export declare class TasksService {
         relatedTaskIds: any;
     }[]>;
     private ensureTask;
+    private syncFlowProgress;
     private defaultInclude;
     private mapTask;
     private lowerCaseEnum;

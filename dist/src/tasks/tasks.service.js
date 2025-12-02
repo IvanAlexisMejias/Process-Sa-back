@@ -13,6 +13,7 @@ exports.TasksService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const flow_progress_util_1 = require("../flows/flow-progress.util");
 let TasksService = class TasksService {
     prisma;
     constructor(prisma) {
@@ -28,6 +29,7 @@ let TasksService = class TasksService {
                 priority: dto.priority,
                 deadline: new Date(dto.deadline),
                 flowInstanceId: dto.flowInstanceId,
+                stageStatusId: dto.stageStatusId,
                 tags: {
                     create: (dto.tags ?? []).map((value) => ({ value })),
                 },
@@ -44,6 +46,9 @@ let TasksService = class TasksService {
             },
             include: this.defaultInclude(),
         });
+        if (task.flowInstanceId) {
+            await this.syncFlowProgress(task.flowInstanceId);
+        }
         return this.mapTask(task);
     }
     async findAll(params) {
@@ -75,6 +80,7 @@ let TasksService = class TasksService {
             priority: dto.priority,
             deadline: dto.deadline ? new Date(dto.deadline) : undefined,
             flowInstance: dto.flowInstanceId ? { connect: { id: dto.flowInstanceId } } : undefined,
+            stageStatus: dto.stageStatusId ? { connect: { id: dto.stageStatusId } } : undefined,
             owner: dto.ownerId ? { connect: { id: dto.ownerId } } : undefined,
             assigner: dto.assignerId ? { connect: { id: dto.assignerId } } : undefined,
             progress: typeof dto.progress === 'number' ? dto.progress : undefined,
@@ -90,6 +96,9 @@ let TasksService = class TasksService {
             data: updateData,
             include: this.defaultInclude(),
         });
+        if (task.flowInstanceId) {
+            await this.syncFlowProgress(task.flowInstanceId);
+        }
         return this.mapTask(task);
     }
     async updateStatus(id, dto, performedById) {
@@ -108,6 +117,9 @@ let TasksService = class TasksService {
             },
             include: this.defaultInclude(),
         });
+        if (task.flowInstanceId) {
+            await this.syncFlowProgress(task.flowInstanceId);
+        }
         return this.mapTask(task);
     }
     async reportProblem(id, dto, reporterId) {
@@ -228,6 +240,9 @@ let TasksService = class TasksService {
         if (!exists)
             throw new common_1.NotFoundException('Tarea no encontrada');
     }
+    async syncFlowProgress(flowInstanceId) {
+        await (0, flow_progress_util_1.recalcAndPersistFlowProgress)(this.prisma, flowInstanceId);
+    }
     defaultInclude() {
         return {
             tags: true,
@@ -258,6 +273,7 @@ let TasksService = class TasksService {
             durationDays: task.durationDays,
             allowRejection: task.allowRejection,
             owner: task.owner,
+            stageStatusId: task.stageStatusId ?? null,
             ownerUnitId: task.owner?.unitId ?? task.flowInstance?.ownerUnitId ?? null,
             assigner: task.assigner,
             flowInstance: task.flowInstance,

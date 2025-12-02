@@ -7,6 +7,7 @@ import { ReportProblemDto } from './dto/report-problem.dto';
 import { CreateSubTaskDto } from './dto/create-subtask.dto';
 import { ResolveProblemDto } from './dto/resolve-problem.dto';
 import { Prisma, TaskPriority, TaskStatus, ProblemStatus } from '@prisma/client';
+import { recalcAndPersistFlowProgress } from '@/flows/flow-progress.util';
 
 @Injectable()
 export class TasksService {
@@ -20,11 +21,12 @@ export class TasksService {
         ownerId: dto.ownerId,
         assignerId: dto.assignerId,
         priority: dto.priority,
-        deadline: new Date(dto.deadline),
-        flowInstanceId: dto.flowInstanceId,
-        tags: {
-          create: (dto.tags ?? []).map((value) => ({ value })),
-        },
+      deadline: new Date(dto.deadline),
+      flowInstanceId: dto.flowInstanceId,
+      stageStatusId: dto.stageStatusId,
+      tags: {
+        create: (dto.tags ?? []).map((value) => ({ value })),
+      },
         subTasks: dto.subTasks
           ? {
               create: dto.subTasks.map((sub) => ({
@@ -38,6 +40,9 @@ export class TasksService {
       },
       include: this.defaultInclude(),
     });
+    if (task.flowInstanceId) {
+      await this.syncFlowProgress(task.flowInstanceId);
+    }
     return this.mapTask(task);
   }
 
@@ -71,6 +76,7 @@ export class TasksService {
       priority: dto.priority,
       deadline: dto.deadline ? new Date(dto.deadline) : undefined,
       flowInstance: dto.flowInstanceId ? { connect: { id: dto.flowInstanceId } } : undefined,
+      stageStatus: dto.stageStatusId ? { connect: { id: dto.stageStatusId } } : undefined,
       owner: dto.ownerId ? { connect: { id: dto.ownerId } } : undefined,
       assigner: dto.assignerId ? { connect: { id: dto.assignerId } } : undefined,
       progress: typeof dto.progress === 'number' ? dto.progress : undefined,
@@ -88,6 +94,9 @@ export class TasksService {
       data: updateData,
       include: this.defaultInclude(),
     });
+    if (task.flowInstanceId) {
+      await this.syncFlowProgress(task.flowInstanceId);
+    }
     return this.mapTask(task);
   }
 
@@ -237,35 +246,7 @@ export class TasksService {
   }
 
   private async syncFlowProgress(flowInstanceId: string) {
-    const tasks = await this.prisma.task.findMany({
-      where: { flowInstanceId },
-      select: { status: true, deadline: true },
-    });
-    if (!tasks.length) return;
-    const total = tasks.length;
-    const completed = tasks.filter((t) => t.status === TaskStatus.COMPLETED).length;
-    const blocked = tasks.some((t) => t.status === TaskStatus.BLOCKED);
-    const delayed = tasks.some(
-      (t) => t.status !== TaskStatus.COMPLETED && new Date(t.deadline) < new Date(),
-    );
-    const progress = Math.round((completed / total) * 100);
-    const health = blocked ? 'AT_RISK' : delayed ? 'DELAYED' : 'ON_TRACK';
-
-    await this.prisma.flowInstance.update({
-      where: { id: flowInstanceId },
-      data: {
-        progress,
-        health,
-      },
-    });
-
-    // sincronizar estados de etapas: si todas las tareas completadas -> completar etapas
-    await this.prisma.flowStageStatus.updateMany({
-      where: { instanceId: flowInstanceId },
-      data: progress === 100
-        ? { progress: 100, status: TaskStatus.COMPLETED }
-        : { progress },
-    });
+    await recalcAndPersistFlowProgress(this.prisma, flowInstanceId);
   }
 
   private defaultInclude() {
@@ -299,6 +280,7 @@ export class TasksService {
       durationDays: task.durationDays,
       allowRejection: task.allowRejection,
       owner: task.owner,
+      stageStatusId: task.stageStatusId ?? null,
       ownerUnitId: task.owner?.unitId ?? task.flowInstance?.ownerUnitId ?? null,
       assigner: task.assigner,
       flowInstance: task.flowInstance,

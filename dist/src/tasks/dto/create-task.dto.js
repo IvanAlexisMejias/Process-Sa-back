@@ -22,6 +22,7 @@ class CreateTaskDto {
     assignerId;
     deadline;
     flowInstanceId;
+    stageStatusId;
     tags;
     subTasks;
 }
@@ -56,6 +57,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "flowInstanceId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTaskDto.prototype, "stageStatusId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)(),

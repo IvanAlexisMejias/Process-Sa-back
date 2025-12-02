@@ -72,6 +72,7 @@ model Task {
   ownerId        String
   assignerId     String
   flowInstanceId String?
+  stageStatusId  String?
   deadline       DateTime
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -88,6 +89,7 @@ model Task {
   histories      TaskHistory[]
   problems       TaskProblem[]
   tags           TaskTag[]
+  stageStatus    FlowStageStatus? @relation(fields: [stageStatusId], references: [id])
 }
 
 model TaskDependency {
@@ -186,6 +188,7 @@ model FlowStageStatus {
   instance   FlowInstance @relation(fields: [instanceId], references: [id])
   owner      User         @relation(fields: [ownerId], references: [id])
   stage      FlowStage    @relation(fields: [stageId], references: [id])
+  tasks      Task[]
 
   @@unique([instanceId, stageId])
 }
