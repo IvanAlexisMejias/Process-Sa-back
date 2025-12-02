@@ -229,11 +229,11 @@ let TasksService = class TasksService {
     defaultInclude() {
         return {
             tags: true,
-            owner: { select: { id: true, fullName: true } },
+            owner: { select: { id: true, fullName: true, unitId: true } },
             assigner: { select: { id: true, fullName: true } },
             subTasks: true,
             problems: true,
-            flowInstance: { select: { id: true, name: true } },
+            flowInstance: { select: { id: true, name: true, ownerUnitId: true, ownerUnit: { select: { id: true, name: true } } } },
             dependencies: { select: { dependsOnId: true } },
             dependents: { select: { taskId: true } },
             histories: true,
@@ -256,6 +256,7 @@ let TasksService = class TasksService {
             durationDays: task.durationDays,
             allowRejection: task.allowRejection,
             owner: task.owner,
+            ownerUnitId: task.owner?.unitId ?? task.flowInstance?.ownerUnitId ?? null,
             assigner: task.assigner,
             flowInstance: task.flowInstance,
             tags: task.tags?.map((tag) => tag.value) ?? [],
