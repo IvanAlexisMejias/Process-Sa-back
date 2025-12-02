@@ -171,12 +171,23 @@ export class FlowsService {
   }
 
   async deleteTemplate(id: string) {
-    const instanceCount = await this.prisma.flowInstance.count({ where: { templateId: id } });
-    if (instanceCount > 0) {
-      throw new BadRequestException('No se puede eliminar una plantilla con instancias activas.');
-    }
+    const instances = await this.prisma.flowInstance.findMany({
+      where: { templateId: id },
+      select: { id: true },
+    });
+
+    const instanceIds = instances.map((inst) => inst.id);
+
     await this.prisma.$transaction([
+      // eliminar tareas ligadas a las instancias
+      this.prisma.task.deleteMany({ where: { flowInstanceId: { in: instanceIds } } }),
+      // estados de etapas
+      this.prisma.flowStageStatus.deleteMany({ where: { instanceId: { in: instanceIds } } }),
+      // instancias
+      this.prisma.flowInstance.deleteMany({ where: { id: { in: instanceIds } } }),
+      // etapas de la plantilla
       this.prisma.flowStage.deleteMany({ where: { templateId: id } }),
+      // plantilla
       this.prisma.flowTemplate.delete({ where: { id } }),
     ]);
     return { deleted: true };
